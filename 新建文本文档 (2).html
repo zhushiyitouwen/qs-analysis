@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QS扣分详情分析</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-light: #3b82f6;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: var(--gray-900);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 头部样式 */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            border-radius: var(--radius-lg);
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 渠道切换标签 */
+        .channel-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .channel-tab {
+            padding: 1rem 2rem;
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .channel-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .channel-tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* 统计概览卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card h3 {
+            font-size: 1.25rem;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        /* 问题类型分布 */
+        .distribution-chart {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .distribution-bars {
+            display: flex;
+            gap: 0.5rem;
+            height: 60px;
+            margin-top: 1rem;
+        }
+
+        .distribution-bar {
+            flex: 1;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .distribution-bar:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        .compliance-bar {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        }
+
+        .customer-bar {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        }
+
+        .business-bar {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        }
+
+        /* 筛选器 */
+        .filter-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            background: white;
+            color: var(--gray-700);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* 问题列表 */
+        .issues-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .issue-category {
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .category-header {
+            padding: 1.5rem;
+            background: var(--gray-50);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .category-header:hover {
+            background: var(--gray-100);
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .category-count {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .issue-list {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, padding 0.3s ease;
+        }
+
+        .issue-list.expanded {
+            padding: 1.5rem;
+            max-height: 2000px;
+        }
+
+        .issue-item {
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .issue-summary {
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .issue-summary:hover {
+            background: var(--gray-100);
+        }
+
+        .issue-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .issue-name {
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: var(--gray-900);
+        }
+
+        .issue-type {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .issue-count {
+            background: var(--warning-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .issue-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            max-height: 1000px;
+            overflow: visible;
+            transition: max-height 0.5s ease, padding 0.3s ease;
+        }
+
+        .issue-details.collapsed {
+            max-height: 0;
+            padding: 0 1.5rem;
+            overflow: hidden;
+        }
+
+        .problem-detail {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .improvement-suggestion {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .detail-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* V4.0超链接样式优化 */
+        .problem-detail a {
+            color: #2563eb;
+            text-decoration: underline;
+            font-weight: 600;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .problem-detail a:hover {
+            color: #1d4ed8;
+            text-decoration: none;
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .improvement-suggestion a {
+            color: #059669;
+            text-decoration: underline;
+            font-weight: 600;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .improvement-suggestion a:hover {
+            color: #047857;
+            text-decoration: none;
+            background-color: rgba(5, 150, 105, 0.1);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .channel-tab {
+                padding: 0.75rem 1.5rem;
+                font-size: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .distribution-bars {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .distribution-bar {
+                height: 40px;
+            }
+            
+            .issue-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 1.5rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .channel-tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .channel-tab {
+                justify-content: center;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部区域 -->
+        <header class="header">
+            <h1>QS扣分详情分析系统 - V4.0</h1>
+            <p>完整超链接版 | 所有问题详情默认展开 | 一键访问知识库流程</p>
+        </header>
+
+        <!-- 渠道切换标签 -->
+        <div class="channel-tabs">
+            <div class="channel-tab active" data-channel="chat">
+                Chat渠道
+                <span class="badge">47次扣分</span>
+            </div>
+            <div class="channel-tab" data-channel="call">
+                Call渠道
+                <span class="badge">32次扣分</span>
+            </div>
+            <div class="channel-tab" data-channel="ob">
+                OB渠道
+                <span class="badge">6次扣分</span>
+            </div>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📊 总扣分次数</h3>
+                <div class="stat-value" id="total-penalties">47</div>
+                <div class="stat-label">当前渠道累计扣分</div>
+            </div>
+            <div class="stat-card">
+                <h3>⚠️ Compliance问题</h3>
+                <div class="stat-value" id="compliance-count">5</div>
+                <div class="stat-label">零容忍合规问题</div>
+            </div>
+            <div class="stat-card">
+                <h3>👤 Customer Critical</h3>
+                <div class="stat-value" id="customer-critical-count">14</div>
+                <div class="stat-label">客户关键问题</div>
+            </div>
+            <div class="stat-card">
+                <h3>💼 Business Critical</h3>
+                <div class="stat-value" id="business-critical-count">11</div>
+                <div class="stat-label">业务关键问题</div>
+            </div>
+        </div>
+
+        <!-- 问题类型分布 -->
+        <div class="distribution-chart">
+            <h3>问题类型分布</h3>
+            <div class="distribution-bars">
+                <div class="distribution-bar compliance-bar" data-type="compliance">
+                    Compliance<br>5次
+                </div>
+                <div class="distribution-bar customer-bar" data-type="customer">
+                    Customer Critical<br>14次
+                </div>
+                <div class="distribution-bar business-bar" data-type="business">
+                    Business Critical<br>11次
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选器 -->
+        <div class="filter-container">
+            <h3>🔍 问题类型筛选</h3>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">全部问题</button>
+                <button class="filter-btn" data-filter="compliance">Compliance</button>
+                <button class="filter-btn" data-filter="customer">Customer Critical</button>
+                <button class="filter-btn" data-filter="business">Business Critical</button>
+            </div>
+        </div>
+
+        <!-- 问题列表容器 -->
+        <div class="issues-container" id="issues-container">
+            <!-- 问题列表将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 数据定义 - V4.0完整数据（含所有超链接）
+        const channelData = {
+            chat: {
+                total: 47,
+                compliance: 5,
+                customer: 14,
+                business: 11,
+                issues: [
+                    {
+                        type: "compliance",
+                        name: "安全验证不完整",
+                        count: 2,
+                        problem: "①客户反馈不明扣款，同事在支付平台通过银行卡信息查询到订单号后直接对客告知订单号以及订单信息，且操作了取消订单；②客人进线提供渣打银行活动链接，表示无法使用优惠代码，同事查看客人UID未查看到优惠代码，经客人提供优惠代码后，未正确查看优惠代码信息，导致未能及时查看到实际是不同UID下的优惠代码，未经与客人核验身份信息就提交咨询单据。",
+                        suggestion: "①需要按照<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=61&businessId=12594&subjectId=98393&sceneId=995688&locale=zh-CN' target='_blank'>[不明扣款流程]</a>：如客人想起订单，如需操作订单，需要确认是否需要进行<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=26&businessId=12741&subjectId=103811&sceneId=2521198&locale=zh-CN&sourceBusinessTypeId=61' target='_blank'>[安全验证]</a>；②客人的优惠代码（一般是私人代码）属于账户内，需要根据<strong>咨询账户问题</strong>进行信息核验"
+                    },
+                    {
+                        type: "compliance",
+                        name: "数据处理不当",
+                        count: 1,
+                        problem: "外呼客人时，未按照GDPR标准话术对客播报。",
+                        suggestion: "应GDPR法规要求，请在外呼时候告知客人：早上/下午/晚上好，我是来自Trip.com的_____, 为了保证服务质量，您的通话将会被录音。"
+                    },
+                    {
+                        type: "compliance",
+                        name: "缺少安全验证",
+                        count: 1,
+                        problem: "对已删除的订单，未按<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=26&businessId=12741&subjectId=103811&sceneId=2521198%2C8614369&locale=zh-CN&sourceBusinessTypeId=61' target='_blank'>[删除订单流程]</a>进行必要的安全验证。",
+                        suggestion: "不论常规身份验证面板是否提示已验证/未验证，IB都需要根据已删除订单弹窗执行身份验证流程（页面无提示身份验证流程的，需要核实1项联系信息+订单号/支付卡号后四位+1项订单信息）"
+                    },
+                    {
+                        type: "compliance",
+                        name: "泄露敏感信息",
+                        count: 1,
+                        problem: "客人进线反馈预订了两个订单，但其中一个订单找不到预订记录，只有支付记录，根据客人提供的银行卡资料，查找后直接对客告知订单信息，实际另一订单与客人进线UID并不一致，客服未进行安全验证前提供了敏感信息引导客人完成信息验证",
+                        suggestion: "不能通过引导性问题'你的邮箱是xxx，对吗？'等引导客人完成安全验证"
+                    },
+                    {
+                        type: "customer",
+                        name: "未参考历史记录",
+                        count: 4,
+                        problem: "会话Summary已提示'客人想了解退款電郵的接收時間'，客服仍重复询问'請問有什麼可以幫到您？'。",
+                        suggestion: "进线后首先查看聊天记录和Summary，直接针对已知需求发起询问。建议话术：'请问您是需要咨询这个订单的xx问题吗'"
+                    },
+                    {
+                        type: "customer",
+                        name: "语法错误",
+                        count: 4,
+                        problem: "会话中存在语法和拼写错误，如将'booking'误写为'bookin'，'non-refundable'误写为'non-refunable'等。",
+                        suggestion: "建议开启IM+的AI输入助手，路径：【设置】-【系统设置】-【输入检查】-【AI输入助手】，目前支持语言：英语、繁中"
+                    },
+                    {
+                        type: "customer",
+                        name: "回复不及时",
+                        count: 3,
+                        problem: "告知客人等待2-3分钟，实际超过5分钟才回复。",
+                        suggestion: "如需客人等待，需告知预计等待时间，可以预约对话及时返回处理。"
+                    },
+                    {
+                        type: "customer",
+                        name: "撤回信息规范",
+                        count: 3,
+                        problem: "撤回信息达到3次，撤回信息后未致歉",
+                        suggestion: "撤回信息后需要致歉，建议话术：'非常抱歉，剛剛信息發送錯誤，現在為您重新發送'"
+                    },
+                    {
+                        type: "business",
+                        name: "未及时创单",
+                        count: 4,
+                        problem: "客人CHAT进线后，已了解客人诉求但超过10分钟才创建单据记录。",
+                        suggestion: "明确客人需求后chat需要在10分钟内创单，建议可以在一进线就点亮客人头像右侧的⭐，然后创单后再点灭"
+                    },
+                    {
+                        type: "business",
+                        name: "漏创单据",
+                        count: 4,
+                        problem: "解答后漏创咨询单记录",
+                        suggestion: "建议可以在一进线就点亮客人头像右侧的⭐，然后创单后再点灭"
+                    },
+                    {
+                        type: "business",
+                        name: "提供不准确时间线",
+                        count: 3,
+                        problem: "投诉单据未按最晚处理时间暂缓客人，直接暂缓客人30分钟/1小时",
+                        suggestion: "在单据最晚回复时间前：1.优先依据小结中约定的回复时间对客。2.若小结未标注回复时间，则按最晚回复时间对客。<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=26&businessId=7015&subjectId=68727&sceneId=210288%2C210729&locale=zh-CN' target='_blank'>[内控]</a>"
+                    }
+                ]
+            },
+            call: {
+                total: 32,
+                compliance: 1,
+                customer: 13,
+                business: 8,
+                issues: [
+                    {
+                        type: "compliance",
+                        name: "泄露敏感信息",
+                        count: 1,
+                        problem: "在未完成客户身份信息核验的情况下，主动告知了订单号后四位。",
+                        suggestion: "必须严格按照<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=26&businessId=12741&subjectId=103811&sceneId=2521198&locale=zh-CN&sourceBusinessTypeId=61' target='_blank'>[流程]</a>完成全部身份验证步骤后，才能透露订单信息。",
+                    },
+                    {
+                        type: "customer",
+                        name: "未能恰当称呼客户",
+                        count: 8,
+                        problem: "整通通话未使用任何称呼（如先生、女士），也没有询问客人如何称呼，全程使用'您'来指代客户。",
+                        suggestion: "通话开始时主动询问'请问怎么称呼您？'，全程使用'X先生/小姐/女士'"
+                    },
+                    {
+                        type: "customer",
+                        name: "未遵循hold线礼仪",
+                        count: 3,
+                        problem: "让客户'稍等'后，返回时未说'感谢您的耐心等待'。",
+                        suggestion: "返回通话后，第一句话必须是'感谢您的耐心等待'。"
+                    },
+                    {
+                        type: "customer",
+                        name: "未询问是否需要进一步帮助",
+                        count: 2,
+                        problem: "未询问客人是否还有其他问题，直接讲结束语挂断电话。",
+                        suggestion: "在说结束语前，询问客人'请问还有什么可以帮到您？'。"
+                    },
+                    {
+                        type: "business",
+                        name: "备注不准确",
+                        count: 3,
+                        problem: "仅备注了部分客户需求，遗漏了酒店现场价格更低、申请4天免费早餐或优惠券等关键信息。",
+                        suggestion: "客人信息以及要求建议可以打开文本/便签/word记录"
+                    },
+                    {
+                        type: "business",
+                        name: "线下模块处理不当",
+                        count: 3,
+                        problem: "包括咨询发票问题未在发票单据创单、重发确认信仅修改邮箱未创单等线下操作问题。",
+                        suggestion: "咨询发票问题，需要在发票单据内创单"
+                    },
+                    {
+                        type: "business",
+                        name: "不必要安全验证",
+                        count: 2,
+                        problem: "弹屏已显示为进线电话绑定订单，客人也主动提供了订单号，客服仍额外核验入住人姓名，属于多余核对。",
+                        suggestion: "需要注意客人进线是否有提供信息，例如客人名、pin码、酒店名、日期等信息，及时记录下来，避免信息多核验"
+                    }
+                ]
+            },
+            ob: {
+                total: 6,
+                compliance: 0,
+                customer: 3,
+                business: 1,
+                issues: [
+                    {
+                        type: "customer",
+                        name: "未回应感谢",
+                        count: 1,
+                        problem: "电话结束前，客户已致谢，客服未作任何回应。",
+                        suggestion: "对客户的任何感谢或礼貌用语，都应给予积极、礼貌的回应。"
+                    },
+                    {
+                        type: "customer",
+                        name: "未询问是否需要帮助",
+                        count: 1,
+                        problem: "电话结束前未询问客人是否需要进一步帮助。",
+                        suggestion: "在说结束语前，需要询问'请问还有什么可以帮到您？'。"
+                    },
+                    {
+                        type: "customer",
+                        name: "回复不及时",
+                        count: 1,
+                        problem: "Chat out客人后，客人回弹消息，客服超30秒未回复，导致客人询问'人呢？'。",
+                        suggestion: "需要及时回复客人，如需要查单，可以在会话内暂缓客人'请稍等3-5分钟，正在为您查看'"
+                    },
+                    {
+                        type: "business",
+                        name: "备注格式不当/缺失",
+                        count: 1,
+                        problem: "创建投诉单时，未按照规定的【R】（客户诉求）、【A】（处理方案）小结格式进行备注。",
+                        suggestion: "创建投诉单等正式单据时，必须使用【R】、【A】的标准格式进行结构化备注，<a href='https://knowledgehub.basebiz.ctripcorp.com/webapp/sp/servicebible/knowledgesync/selectNew?currentBusinessTypeId=26&businessId=8065&subjectId=77631&sceneId=2819615&locale=zh-CN&sourceBusinessTypeId=61' target='_blank'>[流程]</a>"
+                    }
+                ]
+            }
+        };
+
+        // 当前状态
+        let currentChannel = 'chat';
+        let currentFilter = 'all';
+        let expandedCategories = new Set();
+        let expandedIssues = new Set();
+
+        // V4.0改进：默认展开所有分类和问题详情
+        function initializeExpandedState() {
+            expandedCategories.clear();
+            expandedIssues.clear();
+            
+            // 为所有渠道的所有分类和问题添加展开状态
+            Object.keys(channelData).forEach(channel => {
+                const data = channelData[channel];
+                // 按问题类型分组并记录实际存在的分类
+                const issuesByType = {
+                    compliance: data.issues.filter(issue => issue.type === 'compliance'),
+                    customer: data.issues.filter(issue => issue.type === 'customer'),
+                    business: data.issues.filter(issue => issue.type === 'business')
+                };
+                // 只为实际存在问题的分类添加展开状态
+                Object.entries(issuesByType).forEach(([type, issues]) => {
+                    if (issues.length > 0) {
+                        expandedCategories.add(`${channel}-${type}`);
+                        // 为该分类下的每个问题添加展开状态
+                        issues.forEach((_, index) => {
+                            expandedIssues.add(`${channel}-<equation>{type}-</equation>{index}`);
+                        });
+                    }
+                });
+            });
+        }
+
+        // DOM元素
+        const channelTabs = document.querySelectorAll('.channel-tab');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const issuesContainer = document.getElementById('issues-container');
+        const totalPenaltiesEl = document.getElementById('total-penalties');
+        const complianceCountEl = document.getElementById('compliance-count');
+        const customerCriticalCountEl = document.getElementById('customer-critical-count');
+        const businessCriticalCountEl = document.getElementById('business-critical-count');
+
+        // V4.0改进：页面加载时立即初始化并渲染
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeExpandedState();
+            updateStats();
+            renderIssues();
+            setupEventListeners();
+        });
+
+        // 更新统计数据
+        function updateStats() {
+            const data = channelData[currentChannel];
+            totalPenaltiesEl.textContent = data.total;
+            complianceCountEl.textContent = data.compliance;
+            customerCriticalCountEl.textContent = data.customer;
+            businessCriticalCountEl.textContent = data.business;
+        }
+
+        // 渲染问题列表
+        function renderIssues() {
+            issuesContainer.innerHTML = '';
+            const data = channelData[currentChannel];
+            
+            // 按问题类型分组
+            const issuesByType = {
+                compliance: data.issues.filter(issue => issue.type === 'compliance'),
+                customer: data.issues.filter(issue => issue.type === 'customer'),
+                business: data.issues.filter(issue => issue.type === 'business')
+            };
+            
+            // 创建问题类型分类
+            Object.entries(issuesByType).forEach(([type, issues]) => {
+                // 应用筛选
+                if (currentFilter !== 'all' && currentFilter !== type) {
+                    return;
+                }
+                
+                const typeConfig = {
+                    compliance: { title: '⚠️ Compliance（零容忍、合规问题）', color: '#ef4444' },
+                    customer: { title: '👤 Customer Critical（客户关键问题）', color: '#f59e0b' },
+                    business: { title: '💼 Business Critical（业务关键问题）', color: '#10b981' }
+                }[type];
+                
+                const categoryId = `${currentChannel}-${type}`;
+                const isExpanded = expandedCategories.has(categoryId);
+                
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'issue-category fade-in';
+                categoryElement.innerHTML = `
+                    <div class="category-header" data-category="${categoryId}">
+                        <div class="category-title">
+                            ${typeConfig.title}
+                            <span class="category-count">${issues.length}个问题</span>
+                        </div>
+                        <div class="toggle-icon">${isExpanded ? '▼' : '▶'}</div>
+                    </div>
+                    <div class="issue-list ${isExpanded ? 'expanded' : ''}">
+                        ${issues.map((issue, index) => createIssueHTML(issue, index, categoryId)).join('')}
+                    </div>
+                `;
+                
+                issuesContainer.appendChild(categoryElement);
+            });
+        }
+
+        // 创建单个问题的HTML
+        function createIssueHTML(issue, index, categoryId) {
+            const issueId = `${categoryId}-${index}`;
+            const isExpanded = expandedIssues.has(issueId);
+            
+            return `
+                <div class="issue-item">
+                    <div class="issue-summary" data-issue="${issueId}">
+                        <div class="issue-info">
+                            <div class="issue-name">${issue.name}</div>
+                            <div class="issue-type">${getTypeName(issue.type)}</div>
+                        </div>
+                        <div class="issue-count">${issue.count}次</div>
+                    </div>
+                    <div class="issue-details ${isExpanded ? '' : 'collapsed'}">
+                        <div class="problem-detail">
+                            <div class="detail-title">
+                                <span style="color: #ef4444;">❌ 问题详情</span>
+                            </div>
+                            <div>${issue.problem}</div>
+                        </div>
+                        <div class="improvement-suggestion">
+                            <div class="detail-title">
+                                <span style="color: #10b981;">✅ 改进建议</span>
+                            </div>
+                            <div>${issue.suggestion}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取问题类型名称
+        function getTypeName(type) {
+            const typeNames = {
+                compliance: 'Compliance（零容忍）',
+                customer: 'Customer Critical',
+                business: 'Business Critical'
+            };
+            return typeNames[type] || type;
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 渠道切换
+            channelTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    channelTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentChannel = tab.dataset.channel;
+                    currentFilter = 'all'; // 重置筛选器
+                    // 重置筛选按钮状态
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+                    updateStats();
+                    renderIssues();
+                });
+            });
+
+            // 筛选按钮
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentFilter = button.dataset.filter;
+                    renderIssues();
+                });
+            });
+
+            // 分类展开/收起
+            issuesContainer.addEventListener('click', (e) => {
+                // 分类头部点击
+                if (e.target.closest('.category-header')) {
+                    const header = e.target.closest('.category-header');
+                    const categoryId = header.dataset.category;
+                    const list = header.nextElementSibling;
+                    const toggleIcon = header.querySelector('.toggle-icon');
+                    
+                    if (expandedCategories.has(categoryId)) {
+                        expandedCategories.delete(categoryId);
+                        list.classList.remove('expanded');
+                        toggleIcon.textContent = '▶';
+                    } else {
+                        expandedCategories.add(categoryId);
+                        list.classList.add('expanded');
+                        toggleIcon.textContent = '▼';
+                    }
+                    
+                    // 同时关闭所有子问题
+                    const issues = list.querySelectorAll('.issue-details');
+                    issues.forEach(detail => {
+                        detail.classList.remove('expanded');
+                    });
+                    
+                    // 从展开集合中移除相关子问题
+                    Array.from(expandedIssues).forEach(issueId => {
+                        if (issueId.startsWith(categoryId)) {
+                            expandedIssues.delete(issueId);
+                        }
+                    });
+                }
+                
+                // 问题摘要点击
+                if (e.target.closest('.issue-summary')) {
+                    const summary = e.target.closest('.issue-summary');
+                    const issueId = summary.dataset.issue;
+                    const details = summary.nextElementSibling;
+                    
+                    if (expandedIssues.has(issueId)) {
+                        expandedIssues.delete(issueId);
+                        details.classList.add('collapsed');
+                    } else {
+                        expandedIssues.add(issueId);
+                        details.classList.remove('collapsed');
+                    }
+                }
+            });
+
+            // 分布图点击筛选
+            document.querySelectorAll('.distribution-bar').forEach(bar => {
+                bar.addEventListener('click', () => {
+                    const type = bar.dataset.type;
+                    filterButtons.forEach(btn => {
+                        if (btn.dataset.filter === type) {
+                            btn.click();
+                        } else if (type === 'all') {
+                            document.querySelector('.filter-btn[data-filter="all"]').click();
+                        }
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+</html>
